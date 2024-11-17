@@ -1,101 +1,130 @@
-import Image from "next/image";
+'use client';
+
+import React, { useState, useEffect } from "react";
+import StartupScreen from "@/components/StartupScreen";
+import Desktop from "@/components/Desktop";
+import Taskbar from "@/components/Taskbar";
+import AppWindow from "@/components/AppWindow";
+import SettingsApp from "@/components/apps/Settings";
+import ProjectsApp from "@/components/apps/Projects";
+import MediaViewerApp from "@/components/apps/MediaViewer";
+import AboutMeApp from "@/components/apps/AboutMe";
+import FileManagerApp from "@/components/apps/FileManager";
+import TextEditorApp from "@/components/apps/TextEditor";
+import { Settings, Folder, Info, Image, FileText, Edit } from "lucide-react";
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+  const [loading, setLoading] = useState(true);
+  const [fadeOut, setFadeOut] = useState(false);
+  const [openApps, setOpenApps] = useState<string[]>([]);
+  const [background, setBackground] = useState("https://images.pexels.com/photos/1323550/pexels-photo-1323550.jpeg?cs=srgb&dl=pexels-8moments-1323550.jpg&fm=jpg");
+  const [mediaViewerImage, setMediaViewerImage] = useState<string | null>(null);
+  const [textEditorFile, setTextEditorFile] = useState<{ path: string, repo: string } | null>(null);
+  const [zIndices, setZIndices] = useState<{ [key: string]: number }>({});
+  const [highestZIndex, setHighestZIndex] = useState(1);
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+  const openApp = (app: string) => {
+    if (!openApps.includes(app)) setOpenApps([...openApps, app]);
+    setZIndices({ ...zIndices, [app]: highestZIndex + 1 });
+    setHighestZIndex(highestZIndex + 1);
+  };
+
+  const closeApp = (app: string) => {
+    setOpenApps(openApps.filter((a) => a !== app));
+    if (app === "mediaviewer") setMediaViewerImage(null); // Clear image when media viewer closes
+    if (app === "texteditor") setTextEditorFile(null); // Clear file when text editor closes
+  };
+
+  const changeBackground = (url: string) => setBackground(url);
+
+  const bringToFront = (app: string) => {
+    setZIndices({ ...zIndices, [app]: highestZIndex + 1 });
+    setHighestZIndex(highestZIndex + 1);
+  };
+
+  const appContents: { [key: string]: JSX.Element } = {
+    settings: <SettingsApp changeBackground={changeBackground} />,
+    projects: (
+      <ProjectsApp
+        onImageClick={(image) => {
+          setMediaViewerImage(image);
+          if (!openApps.includes("mediaviewer")) openApp("mediaviewer");
+        }}
+      />
+    ),
+    about: <AboutMeApp />,
+    filemanager: (
+      <FileManagerApp
+        defaultRepo="ras-rap/personal"
+        openFile={(path, repo) => {
+          setTextEditorFile({ path, repo });
+          if (!openApps.includes("texteditor")) openApp("texteditor");
+        }}
+      />
+    ),
+    texteditor: textEditorFile ? (
+      <TextEditorApp filePath={textEditorFile.path} repo={textEditorFile.repo} />
+    ) : (
+      <div className="text-white p-4">No file selected.</div>
+    ),
+    mediaviewer: mediaViewerImage ? (
+      <MediaViewerApp image={mediaViewerImage} />
+    ) : (
+      <div className="text-white p-4">No image selected.</div>
+    ),
+  };
+
+  const appIcons = {
+    settings: <Settings />,
+    projects: <Folder />,
+    about: <Info />,
+    filemanager: <FileText />,
+    texteditor: <Edit />,
+    mediaviewer: <Image />,
+  };
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setFadeOut(true);
+      setTimeout(() => {
+        setLoading(false);
+        openApp("about");
+      }, 1000); // 1 second fade out
+    }, 2000); // 2 seconds delay for the startup screen
+    return () => clearTimeout(timer);
+  }, []);
+
+  return (
+    <>
+      {loading ? (
+        <div className={`transition-opacity duration-1000 ${fadeOut ? 'opacity-0' : 'opacity-100'}`}>
+          <StartupScreen onFinish={() => setLoading(false)} />
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
+      ) : (
+        <div
+          className="h-screen w-screen relative bg-cover bg-center transition-opacity duration-1000 opacity-100"
+          style={{ backgroundImage: `url(${background})`, backgroundSize: "cover" }}
         >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
+          <Desktop openApp={openApp} />
+          <Taskbar openApps={openApps} onOpenApp={openApp} appIcons={appIcons} />
+          {openApps.map((app) => (
+            <AppWindow
+              key={app}
+              title={app === "mediaviewer" ? "Media Viewer" : app === "filemanager" ? "File Manager" : app === "texteditor" ? "Text Editor" : app.charAt(0).toUpperCase() + app.slice(1)}
+              content={appContents[app]}
+              onClose={() => closeApp(app)}
+              default={{
+                x: app === "about" ? window.innerWidth / 2 - 400 : 100,
+                y: app === "about" ? window.innerHeight / 2 - 300 : 100,
+                width: 800,
+                height: 600,
+              }} // Center the AboutMeApp window
+              zIndex={zIndices[app] || 1}
+              onFocus={() => bringToFront(app)}
+            />
+          ))}
+        </div>
+      )}
+    </>
   );
 }
