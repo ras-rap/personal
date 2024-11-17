@@ -11,8 +11,8 @@ const projectsData = [
     website: "https://krakenhosting.net/",
     discord: "https://discord.gg/krakenhosting",
     images: [
-      "https://via.placeholder.com/400x300?text=Kraken+Hosting+1",
-      "https://via.placeholder.com/400x300?text=Kraken+Hosting+2",
+      "https://i.imgur.com/yOPSc1J.png",
+      "https://cloud-g3fnx8eej-hack-club-bot.vercel.app/0image.png",
     ],
   },
   {
@@ -25,6 +25,12 @@ const projectsData = [
       "https://cloud-8uov2clpn-hack-club-bot.vercel.app/0image.png",
     ],
   },
+  {
+    id: "personal",
+    name: "Personal Website",
+    description: "The website you're currently viewing!",
+    github: "https://github.com/ras-rap/personal",
+    images: [],}
 ];
 
 
