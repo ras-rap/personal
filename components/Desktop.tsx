@@ -15,7 +15,7 @@ function getTextColor(backgroundColor: string) {
   return luminance > 128 ? "black" : "white";
 }
 
-export default function Desktop({ openApp }: { openApp: (app: string) => void }) {
+export default function Desktop({ openApp, isMobile }: { openApp: (app: string) => void, isMobile: boolean }) {
   const [backgroundColor, setBackgroundColor] = useState("rgb(57, 48, 83)"); // Default background color
   const [textColor, setTextColor] = useState(getTextColor(backgroundColor));
 
@@ -32,12 +32,14 @@ export default function Desktop({ openApp }: { openApp: (app: string) => void })
   ];
 
   return (
-    <div className="desktop-container h-full w-full relative" style={{ height: "calc(100vh - 3rem)" }}> {/* Adjust height to account for taskbar */}
+    <div className={`desktop-container h-full w-full relative ${isMobile ? 'mobile-desktop' : ''}`} style={{ height: isMobile ? "100vh" : "calc(100vh - 3rem)" }}>
       {icons.map((icon) => (
         <Rnd
           key={icon.id}
           default={{ ...icon.defaultPosition, width: 80, height: 100 }}
           bounds="parent"
+          disableDragging={isMobile}
+          enableResizing={!isMobile}
         >
           <button
             onDoubleClick={() => openApp(icon.id)}

@@ -1,4 +1,4 @@
-'use client';
+'use client'
 
 import React, { useState, useEffect } from "react";
 import StartupScreen from "@/components/StartupScreen";
@@ -22,6 +22,16 @@ export default function Home() {
   const [textEditorFile, setTextEditorFile] = useState<{ path: string, repo: string } | null>(null);
   const [zIndices, setZIndices] = useState<{ [key: string]: number }>({});
   const [highestZIndex, setHighestZIndex] = useState(1);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+    window.addEventListener("resize", handleResize);
+    handleResize();
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   const openApp = (app: string) => {
     if (!openApps.includes(app)) setOpenApps([...openApps, app]);
@@ -29,14 +39,13 @@ export default function Home() {
     setHighestZIndex(highestZIndex + 1);
   };
 
-  const closeApp = (app: string) => {
-    setOpenApps(openApps.filter((a) => a !== app));
-    if (app === "mediaviewer") setMediaViewerImage(null); // Clear image when media viewer closes
-    if (app === "texteditor") setTextEditorFile(null); // Clear file when text editor closes
+  const closeApp = () => {
+    setOpenApps([]);
+    setMediaViewerImage(null);
+    setTextEditorFile(null);
   };
 
   const changeBackground = (url: string) => setBackground(url);
-
   const bringToFront = (app: string) => {
     setZIndices({ ...zIndices, [app]: highestZIndex + 1 });
     setHighestZIndex(highestZIndex + 1);
@@ -89,8 +98,8 @@ export default function Home() {
       setTimeout(() => {
         setLoading(false);
         openApp("about");
-      }, 1000); // 1 second fade out
-    }, 2000); // 2 seconds delay for the startup screen
+      }, 1000);
+    }, 2000);
     return () => clearTimeout(timer);
   }, []);
 
@@ -102,25 +111,26 @@ export default function Home() {
         </div>
       ) : (
         <div
-          className="h-screen w-screen relative bg-cover bg-center transition-opacity duration-1000 opacity-100"
+          className={`h-screen w-screen relative bg-cover bg-center transition-opacity duration-1000 opacity-100 ${isMobile ? 'mobile-layout' : ''}`}
           style={{ backgroundImage: `url(${background})`, backgroundSize: "cover" }}
         >
-          <Desktop openApp={openApp} />
-          <Taskbar openApps={openApps} onOpenApp={openApp} appIcons={appIcons} />
+          <Desktop openApp={openApp} isMobile={isMobile} />
+          <Taskbar openApps={openApps} onOpenApp={openApp} onCloseApp={closeApp} appIcons={appIcons} isMobile={isMobile} />
           {openApps.map((app) => (
             <AppWindow
               key={app}
               title={app === "mediaviewer" ? "Media Viewer" : app === "filemanager" ? "File Manager" : app === "texteditor" ? "Text Editor" : app.charAt(0).toUpperCase() + app.slice(1)}
               content={appContents[app]}
-              onClose={() => closeApp(app)}
+              onClose={() => closeApp()}
               default={{
                 x: app === "about" ? window.innerWidth / 2 - 400 : 100,
                 y: app === "about" ? window.innerHeight / 2 - 300 : 100,
-                width: 800,
-                height: 600,
-              }} // Center the AboutMeApp window
+                width: isMobile ? window.innerWidth : 800,
+                height: isMobile ? window.innerHeight - 48 : 600, // Adjust height to account for taskbar
+              }}
               zIndex={zIndices[app] || 1}
               onFocus={() => bringToFront(app)}
+              isMobile={isMobile}
             />
           ))}
         </div>

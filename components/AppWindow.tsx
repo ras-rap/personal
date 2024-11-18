@@ -8,11 +8,12 @@ interface AppWindowProps {
   default: { x: number; y: number; width: number; height: number };
   zIndex: number;
   onFocus: () => void;
+  isMobile: boolean;
 }
 
-const AppWindow = ({ title, content, onClose, default: defaultProps, zIndex, onFocus }: AppWindowProps) => {
+const AppWindow = ({ title, content, onClose, default: defaultProps, zIndex, onFocus, isMobile }: AppWindowProps) => {
   const [position, setPosition] = useState({ x: defaultProps.x, y: defaultProps.y });
-  const [size,] = useState({ width: defaultProps.width, height: defaultProps.height });
+  const [size] = useState({ width: defaultProps.width, height: defaultProps.height });
   const [isDragging, setIsDragging] = useState(false);
 
   const handleDragStart: RndDragCallback = () => {
@@ -36,14 +37,19 @@ const AppWindow = ({ title, content, onClose, default: defaultProps, zIndex, onF
 
   return (
     <Rnd
-      size={{ width: size.width, height: size.height }}
-      position={{ x: position.x, y: position.y }}
+      size={{ width: isMobile ? '100vw' : size.width, height: isMobile ? 'calc(100vh - 3rem)' : size.height }}
+      position={{ x: isMobile ? 0 : position.x, y: isMobile ? 0 : position.y }}
       onDragStart={handleDragStart}
       onDragStop={handleDragStop}
       onResizeStop={handleResizeStart}
+      bounds="window"
+      minWidth={300}
+      minHeight={200}
       style={{ zIndex, opacity: isDragging ? 0.8 : 1 }}
+      disableDragging={isMobile}
+      enableResizing={!isMobile}
     >
-      <div className="window rounded-lg shadow-lg" onClick={handleClick} style={{ zIndex }}>
+      <div className={`window rounded-lg shadow-lg ${isMobile ? 'mobile-window' : ''}`} onClick={handleClick} style={{ zIndex }}>
         <div className="window-header flex justify-between items-center p-2 bg-darkSlateBlue text-white rounded-t-lg">
           <span>{title}</span>
           <button onClick={onClose} className="text-white">X</button>
